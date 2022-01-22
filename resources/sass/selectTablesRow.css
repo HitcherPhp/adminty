@@ -1,0 +1,26 @@
+tr:hover:not(.active) td {
+    background: #eaeaea;
+}
+
+tr.active td {
+    background: rgba(1, 163, 172, 0.38);
+}
+
+.userlist-box:hover {
+    background: #eaeaea;
+}
+
+
+.checkbox-fade {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    vertical-align: middle;
+    padding-bottom: 10px;
+}
+
+.info-card a {
+    color: #01a9ac;
+    margin: 0;
+    font-size: 14px;
+}

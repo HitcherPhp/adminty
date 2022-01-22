@@ -1,0 +1,109 @@
+#select-option-unic {
+    margin-right: 4em;
+}
+#search-input-unic {
+    margin-left: auto;
+    margin-right: 0em;
+}
+#btn-success {
+    display: flex;
+    height: 2.5em;
+    background-color:#0ac282;
+    border-color:#0ac282;
+    color:#fff;
+    cursor:pointer;
+    -webkit-transition:all ease-in .3s;
+    transition:all ease-in .3s
+}
+
+button.btn:disabled {
+    background-color: #e9ecef;
+    border-color: #e9ecef;
+}
+
+button.btn-add-row {
+    background-color: #0ac282;
+    border-color: #0ac282;
+    color:#fff;
+    cursor:pointer;
+    -webkit-transition:all ease-in .3s;
+    transition:all ease-in .3s
+}
+
+button.btn-add-row:hover {
+    background-color: #0cf2a2;
+}
+
+button.btn-delete-row {
+    background-color: #ff465c;
+    border-color: #ff465c;
+    color:#fff;
+    cursor:pointer;
+    -webkit-transition:all ease-in .3s;
+    transition:all ease-in .3s
+}
+
+button.btn-delete-row:hover:not(:disabled) {
+    background-color: #fc6a94;
+}
+
+tr:hover:not(.active) td {
+    background: #eaeaea;
+}
+
+tr.active td {
+    background: rgba(1, 163, 172, 0.38);
+}
+
+.userlist-box:hover {
+    background: #eaeaea;
+}
+
+
+.checkbox-fade {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    vertical-align: middle;
+    padding-bottom: 10px;
+}
+
+.info-card a {
+    color: #01a9ac;
+    margin: 0;
+    font-size: 14px;
+}
+
+.message-icon {
+    text-align: center;
+    margin-top: 50px;
+    margin-bottom: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.message-icon .mrow {
+    width: 500px;
+    flex-wrap: wrap;
+    display: flex;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.message-icon i {
+    font-size: 150px;
+    height: 50px;
+    width: 10em;
+}
+
+.message-icon h4 {
+    height: 50px;
+    margin-top: 100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+
+

@@ -1,0 +1,8 @@
+tr.row-selected:hover:not(.active) td {
+  background: #eaeaea;
+}
+
+tr.active td {
+  background: #01a3ac61;
+}
+

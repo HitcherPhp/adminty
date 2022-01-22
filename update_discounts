@@ -1,0 +1,150 @@
+
+UPDATE `city_category_product` SET `discount_id`=NULL WHERE 1;
+UPDATE `discounts` SET `deleted`=false WHERE 1;
+
+UPDATE city_category_product ccp
+SET
+ccp.discount_id =
+
+IF (
+
+(NOW() BETWEEN nd.start and nd.end)
+and (ccp.category_id is not null and ccp.product_id is not null)
+and ((nd.product_id is null and ccp.category_id = nd.category_id) or (nd.category_id is null and ccp.product_id = nd.product_id))
+and (
+ccp.discount_id is null
+or (nd.start > od.start)
+or (nd.start = od.start and nd.percent > od.percent ))
+
+, nd.id,  ccp.discount_id)
+
+WHERE ccp.published = true and nd.deleted = false
+
+
+#поиск по товара по категории
+SELECT *
+FROM city_category_product ccp
+JOIN categories c on ccp.category_id = c.id
+WHERE (FIND_IN_SET(6, c.parent_ids) <> 0 or ccp.category_id = 6) and ccp.product_id is not NULL
+
+#обновление parent_ids категорий
+
+UPDATE `categories` SET `parent_ids`='-1' WHERE 1;
+
+UPDATE categories c LEFT JOIN categories pc ON pc.id = c.parent_id SET c.parent_ids = CONCAT(-1, ',', COALESCE(pc.parent_ids, -1), ',', pc.id) WHERE c.id = NEW.id
+SELECT * FROM `categories`
+
+UPDATE `categories` SET `parent_ids`='-1' WHERE 1;
+
+WITH cte as (select id from categories order by id asc)
+UPDATE categories c JOIN categories pc ON c.parent_id = pc.id SET c.parent_ids = CONCAT(pc.parent_ids, ',', c.parent_id)
+where c.id in (select id from cte);
+
+SELECT * FROM `categories`
+
+UPDATE categories c JOIN (select * from categories order BY id asc) pc ON c.parent_id = pc.id
+SET c.parent_ids = CONCAT(pc.parent_ids, ',', c.parent_id)
+where find_in_set(c.id, (select GROUP_CONCAT(id, ',') from categories order BY id asc)) <> 0;
+
+with recursiv cte AS
+(
+    SELECT c.id as id, c.parent_id as parent_id, c.parent_ids as parent_ids from categories c order by id asc
+    union all
+    SELECT c.id, c.parent_id, CONCAT(cte.parent_ids, ',', cte.id) AS parent_ids from categories c join cte on cte.perent_id = c.id
+)
+select * from cte;
+
+#для приемок с поиском
+select `r`.`id` as `id`, `r`.`name` as `name`, CONCAT(c.name, ', ', r.address, ', ' , COALESCE(r.additional_address,
+'')) as reception_address, `r`.`phone` as `phone`, `r`.`household` as `household`, CONCAT(r.discount_percent, '%') as
+discount_percent, `r`.`coordinates` as `coordinates`, `c`.`utc_id` from `city_franchise_factory_reception_user` as
+`cffru` left join `receptions` as `r` on `r`.`id` = `cffru`.`reception_id` left join `cities` as `c` on `c`.`id` =
+`cffru`.`city_id` left join `timezones` as `tz` on `tz`.`id` = `c`.`utc_id` where `cffru`.`city_id` is not null and
+`cffru`.`franchise_id` is not null and `cffru`.`factory_id` is not null and `cffru`.`reception_id` is not null and
+`cffru`.`user_id` is not null and `r`.`deleted` = false and (CONCAT(c.name, r.address, COALESCE(r.additional_address, ''))
+like '%какая%' or CONCAT(c.name, r.address, COALESCE(r.additional_address, '')) like '%то%' or CONCAT(c.name, r.address,
+COALESCE(r.additional_address, '')) like '%улица%' or CONCAT(c.name, r.address, COALESCE(r.additional_address, '')) like
+'%москва%' or CONCAT(c.name, r.address, COALESCE(r.additional_address, '')) like '%д%' or CONCAT(c.name, r.address,
+COALESCE(r.additional_address, '')) like '%5%') limit 20
+
+
+#категории
+select distinct pc.id from city_category_product ccp join categories c on ccp.category_id = c.id left join categories pc on (find_in_set(pc.id, c.parent_ids) or pc.id = ccp.category_id);
+
+#обновление скидок
+UPDATE discounts as d SET d.deleted=true WHERE STR_TO_DATE(d.end, '%Y-%m-%d %H:%i:%s') <= STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s');
+SELECT * FROM `discounts`;
+update city_category_product as ccp SET ccp.discount_id = null, ccp.promotion_ids = null where ccp.city_id in (1,2,3,4,5,6,7,8,9,10,11,12);
+
+update city_category_product as ccp
+join (select id, `start`, `end`, percent, product_ids, promotion_id, deleted from discounts where city_id in (1,2,3,4,5,6,7,8,9,10,11,12)) as d on FIND_IN_SET(ccp.id, d.product_ids) <> 0 join promotions as p on p.id = d.promotion_id
+SET ccp.discount_id = d.id 
+WHERE ccp.published = true
+and d.deleted = false
+and p.deleted = false
+and d.percent <> 0
+and STR_TO_DATE(d.start, '%Y-%m-%d %H:%i:%s') <= STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s')
+and STR_TO_DATE(d.end, '%Y-%m-%d %H:%i:%s') > STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s')
+and CONCAT(d.start, d.percent) = (select CONCAT(ds.start, ds.percent) from (select id, `start`, `end`, percent, product_ids, promotion_id, deleted from discounts where city_id in (1,2,3,4,5,6,7,8,9,10,11,12)) as ds  join promotions as ps on ps.id = ds.promotion_id
+                                  where ds.percent <> 0
+                                  and FIND_IN_SET(ccp.id, ds.product_ids) <> 0
+                                  and ds.deleted = false
+                                  and ps.deleted = false
+                                  and STR_TO_DATE(ds.start, '%Y-%m-%d %H:%i:%s') <= STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s')
+                  and STR_TO_DATE(ds.end, '%Y-%m-%d %H:%i:%s') > STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s')
+                                  and ds.percent is not null
+                                  ORDER BY ds.start DESC, ds.percent DESC LIMIT 1);
+
+update city_category_product ccpm join (SELECT ccp.id, CONCAT(COALESCE(ccp.promotion_ids, '-1'), ',', GROUP_CONCAT(DISTINCT d.id ORDER BY d.id asc SEPARATOR ',')) as p_ids 
+from city_category_product as ccp join (select id, `start`, `end`, percent, product_ids, promotion_id, deleted from discounts where city_id in (1,2,3,4,5,6,7,8,9,10,11,12)) as d on FIND_IN_SET(ccp.id, d.product_ids) <> 0
+join promotions as p on p.id = d.promotion_id
+where ccp.published = true
+and d.deleted = false
+and p.deleted = false
+and STR_TO_DATE(d.start, '%Y-%m-%d %H:%i:%s') <= STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s')
+and STR_TO_DATE(d.end, '%Y-%m-%d %H:%i:%s') > STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s')
+and (
+    (d.percent <> 0 and CONCAT(d.start, d.percent) = (select CONCAT(ds.start, ds.percent) from (select id, `start`, `end`, percent, product_ids, promotion_id, deleted from discounts where city_id in (1,2,3,4,5,6,7,8,9,10,11,12)) as ds join promotions as ps on ps.id = ds.promotion_id
+                                  where FIND_IN_SET(ccp.id, ds.product_ids) <> 0
+                                  and ds.deleted = false
+                                  and ps.deleted = false
+                                  and ds.percent <> 0
+                                  and STR_TO_DATE(ds.start, '%Y-%m-%d %H:%i:%s') <= STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s')
+                  and STR_TO_DATE(ds.end, '%Y-%m-%d %H:%i:%s') > STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s')
+                                  ORDER BY ds.start DESC, ds.percent DESC LIMIT 1))
+or (d.percent = 0 and d.start = (select dss.start from (select id, `start`, `end`, percent, product_ids, promotion_id, deleted from discounts where city_id in (1,2,3,4,5,6,7,8,9,10,11,12)) as dss join promotions as pss on pss.id = dss.promotion_id
+                                     where FIND_IN_SET(ccp.id, dss.product_ids) <> 0 
+                                     and dss.deleted = false
+                                     and pss.deleted = false
+                                     and dss.percent = 0
+                                     and STR_TO_DATE(dss.start, '%Y-%m-%d %H:%i:%s') <= STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s')
+                     and STR_TO_DATE(dss.end, '%Y-%m-%d %H:%i:%s') > STR_TO_DATE(NOW(), '%Y-%m-%d %H:%i:%s')
+                                     GROUP BY dss.start ORDER BY dss.start DESC LIMIT 1)))
+GROUP BY ccp.id) as ccp on ccp.id = ccpm.id
+SET ccpm.promotion_ids = ccp.p_ids;
+
+SELECT * FROM `city_category_product`;
+
+#промоакции товара
+select p.id, p.name from city_category_product as ccp join discounts as d on FIND_IN_SET(d.id, ccp.promotion_ids) <> 0 join promotions as p on p.id = d.promotion_id WHERE d.deleted = false and p.deleted = false;
+
+#популярный комментарий
+SELECT * FROM `comments` WHERE 1;
+
+SELECT * FROM `ratings` WHERE 1;
+
+
+SELECT cmnt.id, cmnt.comment, convert_tz(cmnt.created_at, '+00:00', (select tz.utc from city_category_product as ccp join cities as cts on cts.id = ccp.city_id join timezones as tz on tz.id = cts.timezone_id WHERE ccp.id = 1)) as created_at, cstm.name, rtng.mark from comments as cmnt join ratings as rtng join customers as cstm on cstm.id = cmnt.customer_id where cmnt.product_id = 1 ORDER BY cmnt.created_at DESC limit 1
+
+select cs.id as id, cs.comment as comment, cs.customer_id as customer_id, cs.created_at as created_at, AVG(r.mark) as avg_mark FROM ratings as r join comments as cs on cs.id = r.comment_id
+      where r.comment_id in (select c.id from comments as c where c.product_id = 1) GROUP by r.comment_id;
+
+SELECT MAX(am.avg_mark), am.customer_id from (select cs.id as id, cs.comment as comment, cs.customer_id as customer_id, cs.created_at as created_at, AVG(r.mark) as avg_mark FROM ratings as r join comments as cs on cs.id = r.comment_id
+      where r.comment_id in
+      (select c.id from comments as c where c.product_id = 1) GROUP by r.comment_id order by AVG(r.mark) DESC limit 1) as am GROUP BY am.id;
+
+select am.id, am.comment, convert_tz(am.created_at, '+00:00', tz.utc) as created_at, c.name, ROUND(MAX(am.avg_mark)) as rating
+from (select cs.id as id, cs.comment as comment, cs.customer_id as customer_id, cs.created_at as created_at, AVG(r.mark) as avg_mark FROM ratings as r join comments as cs on cs.id = r.comment_id
+      where r.comment_id in
+      (select c.id from comments as c where c.product_id = 1) GROUP by r.comment_id order by AVG(r.mark) DESC limit 1) as am
+join customers as c on c.id = am.customer_id join city_category_product as ccp on ccp.id = 1 join cities as cts on cts.id = ccp.city_id join timezones as tz on tz.id = cts.timezone_id GROUP BY am.id LIMIT 1;
